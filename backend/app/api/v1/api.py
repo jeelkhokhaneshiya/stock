@@ -1,0 +1,20 @@
+from fastapi import APIRouter
+from app.api.v1.endpoints import health, auth, portfolios, paper, market_data, analysis, allocation, decision, risk, autonomous, broker, reconciliation, orders, execution_readiness, broker_health, investment
+
+api_router = APIRouter()
+api_router.include_router(health.router, tags=["health"])
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+api_router.include_router(portfolios.router, prefix="/portfolios", tags=["portfolios"])
+api_router.include_router(paper.router, prefix="/paper", tags=["paper"])
+api_router.include_router(market_data.router, prefix="/market", tags=["market"])
+api_router.include_router(analysis.router, prefix="/analysis", tags=["analysis"])
+api_router.include_router(allocation.router, prefix="/portfolio", tags=["allocation"])
+api_router.include_router(decision.router, prefix="/decision", tags=["decision"])
+api_router.include_router(risk.router, prefix="/risk", tags=["risk"])
+api_router.include_router(execution_readiness.router, prefix="/execution-readiness", tags=["execution_readiness"])
+api_router.include_router(broker_health.router, prefix="/broker-monitoring", tags=["broker_health"])
+api_router.include_router(autonomous.router, prefix="/autonomous", tags=["autonomous"])
+api_router.include_router(broker.router, prefix="/broker", tags=["broker"])
+api_router.include_router(reconciliation.router, prefix="/reconciliation", tags=["reconciliation"])
+api_router.include_router(orders.router, prefix="/orders", tags=["orders"])
+api_router.include_router(investment.router, prefix="/investment", tags=["investment"])

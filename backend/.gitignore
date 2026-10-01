@@ -1,0 +1,24 @@
+# Environments
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.venv
+venv/
+env/
+
+# Database
+*.sqlite3
+local_dev.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp

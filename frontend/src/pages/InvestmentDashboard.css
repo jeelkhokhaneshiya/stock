@@ -1,0 +1,7 @@
+.investment-dashboard { padding: 2rem; }
+.card { border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-top: 1rem; }
+.decision { font-weight: bold; padding: 0.5rem; border-radius: 4px; display: inline-block; }
+.decision.buy { background-color: #d4edda; color: #155724; }
+.decision.sell { background-color: #f8d7da; color: #721c24; }
+.decision.hold { background-color: #cce5ff; color: #004085; }
+.decision.watchlist { background-color: #fff3cd; color: #856404; }
