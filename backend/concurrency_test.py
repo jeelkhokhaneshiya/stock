@@ -1,9 +1,11 @@
 import asyncio
 import httpx
 import logging
+import pytest
 
 logging.basicConfig(level=logging.INFO)
 
+@pytest.mark.asyncio
 async def test_concurrency():
     async with httpx.AsyncClient(timeout=30.0) as client:
         # 1. Login to get JWT
