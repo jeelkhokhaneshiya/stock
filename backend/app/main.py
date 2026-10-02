@@ -106,5 +106,9 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "An unexpected error occurred."},
     )
 
+@app.get("/health")
+def root_health_check():
+    return {"status": "healthy"}
+
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(shadow_router, prefix="/api/v1")

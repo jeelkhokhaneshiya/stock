@@ -9,6 +9,11 @@ def test_health_check_success(client: TestClient):
     assert response.json()["status"] == "ok"
     assert response.json()["database"] == "connected"
 
+def test_root_health_check_success(client: TestClient):
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "healthy"}
+
 def test_health_check_db_failure(client: TestClient):
     def override_get_db():
         class MockSession:
