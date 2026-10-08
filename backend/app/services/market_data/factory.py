@@ -27,19 +27,13 @@ def get_market_data_service() -> MarketDataService:
     fundamental_provider = None
     if provider_name != "mock":
         from app.services.fundamentals.base import FundamentalProviderRegistry
-        from app.services.fundamentals.fmp import FMPFundamentalDataProvider
-        from app.services.fundamentals.eodhd import EODHDFundamentalDataProvider
-        from app.services.fundamentals.indian_api import IndianAPIFundamentalDataProvider
         from app.services.fundamentals.screener import ScreenerFundamentalDataProvider
 
         registry = FundamentalProviderRegistry()
-        registry.register("fmp", FMPFundamentalDataProvider())
-        registry.register("eodhd", EODHDFundamentalDataProvider())
-        registry.register("indian_api", IndianAPIFundamentalDataProvider())
         registry.register("screener", ScreenerFundamentalDataProvider())
         
         # Priority order can be configured, or left to default.
-        registry.set_priority(["screener", "fmp", "eodhd", "indian_api"])
+        registry.set_priority(["screener"])
         fundamental_provider = registry
         
     return MarketDataService(provider, fundamental_provider=fundamental_provider)
