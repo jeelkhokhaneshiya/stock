@@ -14,17 +14,22 @@ class RiskAnalyzer:
                 warnings.append("High volatility detected")
                 
         # Risk of high debt from fundamentals
-        if f_details.get("debt_to_equity", 0) > 2.0:
+        debt_to_equity = f_details.get("debt_to_equity", {}).get("value")
+        if debt_to_equity is not None and debt_to_equity > 2.0:
             score -= 30
             warnings.append("Excessive debt levels")
             
         # Risk of extreme valuation
-        if v_details.get("pe_ratio", 0) > 50:
+        pe_ratio = v_details.get("pe_ratio")
+        if isinstance(pe_ratio, dict):
+            pe_ratio = pe_ratio.get("value")
+        if pe_ratio is not None and pe_ratio > 50:
             score -= 20
             warnings.append("Extreme valuation multiples")
             
         # Risk of poor profitability
-        if f_details.get("roe", 1.0) < 0.05 and asset_type == "STOCK":
+        roe = f_details.get("roe", {}).get("value")
+        if roe is not None and roe < 0.05 and asset_type == "STOCK":
             score -= 20
             warnings.append("Weak profitability metrics")
             

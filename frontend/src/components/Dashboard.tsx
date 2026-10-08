@@ -9,10 +9,12 @@ import type {
 } from '../types/angel_one';
 import { BrokerService, ApiError } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import ChartEngine from './ChartEngine';
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
   const { logout, user } = useAuth();
+  const [selectedSymbol, setSelectedSymbol] = useState<string>("TCS-EQ");
   const [status, setStatus] = useState<BrokerAuthPingResponse | null>(null);
   const [account, setAccount] = useState<AngelOneAccountInfo | null>(null);
   const [funds, setFunds] = useState<AngelOneFundsResponse | null>(null);
@@ -135,6 +137,12 @@ const Dashboard: React.FC = () => {
         </section>
       )}
 
+      {selectedSymbol && (
+        <section className="chart-section">
+          <ChartEngine symbol={selectedSymbol} />
+        </section>
+      )}
+
       {(account || sectionErrors.account) && (
         <section className="account-section">
           <div className="card">
@@ -223,7 +231,7 @@ const Dashboard: React.FC = () => {
                   </thead>
                   <tbody>
                     {holdings.holdings.map((h, i) => (
-                      <tr key={i}>
+                      <tr key={i} onClick={() => setSelectedSymbol(`${h.symbol}-EQ`)} style={{ cursor: 'pointer' }}>
                         <td>{h.symbol}</td>
                         <td>{h.quantity}</td>
                         <td>₹{h.average_price}</td>
@@ -270,7 +278,7 @@ const Dashboard: React.FC = () => {
                   </thead>
                   <tbody>
                     {positions.positions.map((p, i) => (
-                      <tr key={i}>
+                      <tr key={i} onClick={() => setSelectedSymbol(`${p.symbol}-EQ`)} style={{ cursor: 'pointer' }}>
                         <td>{p.symbol}</td>
                         <td>{p.product}</td>
                         <td className={`side-${p.side.toLowerCase()}`}>{p.side}</td>

@@ -67,7 +67,7 @@ class MarketDataProvider(ABC):
         pass
 
     @abstractmethod
-    def get_fundamentals(self, symbol: str, exchange: str) -> Any:
+    def get_fundamentals(self, symbol: str, exchange: str, isin: Optional[str] = None) -> Any:
         pass
 
     @abstractmethod

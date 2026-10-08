@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone
-from typing import List, Any
+from typing import List, Any, Optional
 from app.services.interfaces import MarketDataProvider
 from app.schemas.market_data import (
     MarketQuote, HistoricalBar, CompanyInfo, 
@@ -12,8 +12,9 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 class MarketDataService:
-    def __init__(self, provider: MarketDataProvider):
+    def __init__(self, provider: MarketDataProvider, fundamental_provider=None):
         self.provider = provider
+        self.fundamental_provider = fundamental_provider
         
     def _check_stale(self, data: Any, max_age: int) -> Any:
         if hasattr(data, 'timestamp') and data.timestamp:
@@ -70,7 +71,7 @@ class MarketDataService:
         except Exception as e:
             raise ValueError(f"Failed to fetch company info: {str(e)}")
 
-    def get_fundamentals(self, symbol: str, exchange: str = "NSE") -> FundamentalData:
+    def get_fundamentals(self, symbol: str, exchange: str = "NSE", isin: Optional[str] = None) -> Any:
         cache_key = f"fund:{exchange}:{symbol}"
         cached_data = cache.get(cache_key, settings.HISTORICAL_DATA_MAX_AGE)
         
@@ -78,12 +79,21 @@ class MarketDataService:
             return cached_data
             
         try:
-            data = self.provider.get_fundamentals(symbol, exchange)
+            if self.fundamental_provider:
+                data = self.fundamental_provider.get_fundamentals(symbol, exchange, isin)
+            else:
+                data = self.provider.get_fundamentals(symbol, exchange, isin)
+            
+            if data is None:
+                # UNAVAILABLE data correctly returned from compliant provider
+                return None
+                
             data = self._check_stale(data, settings.HISTORICAL_DATA_MAX_AGE)
             cache.set(cache_key, data)
             return data
         except Exception as e:
-            raise ValueError(f"Failed to fetch fundamentals: {str(e)}")
+            logger.warning(f"Failed to fetch fundamentals for {symbol}: {str(e)}")
+            return None
 
     def get_etf_info(self, symbol: str, exchange: str = "NSE") -> ETFInfo:
         try:

@@ -1,0 +1,145 @@
+.portfolio-intelligence {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.pi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.pi-header h2 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.pi-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.freshness-badge {
+  background: #e1f5fe;
+  color: #0288d1;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.pi-section {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.pi-section h3 {
+  margin-top: 0;
+  color: #34495e;
+  margin-bottom: 1.5rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.stat-card .label {
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.stat-card .value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+.value.positive { color: #28a745; }
+.value.negative { color: #dc3545; }
+.value.risk-low { color: #28a745; }
+.value.risk-moderate { color: #f39c12; }
+.value.risk-high { color: #e74c3c; }
+.value.risk-critical { color: #c0392b; font-weight: bold; }
+
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
+}
+
+th {
+  background-color: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+tr:hover {
+  background-color: #f8f9fa;
+}
+
+.decision-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.decision-badge.buy_candidate { background: #d4edda; color: #155724; }
+.decision-badge.hold { background: #e2e3e5; color: #383d41; }
+.decision-badge.watch { background: #fff3cd; color: #856404; }
+.decision-badge.sell_review { background: #f8d7da; color: #721c24; }
+.decision-badge.reduce_review { background: #f8d7da; color: #721c24; }
+
+.reasons-cell {
+  font-size: 0.85rem;
+  color: #6c757d;
+  max-width: 300px;
+}
+
+.notice {
+  font-size: 0.8rem;
+  color: #856404;
+  background-color: #fff3cd;
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+.warning-section {
+  border-left: 4px solid #dc3545;
+}

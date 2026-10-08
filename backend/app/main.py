@@ -91,6 +91,8 @@ app.add_middleware(SafeLoggingMiddleware)
 
 if settings.FRONTEND_ORIGIN:
     origins = [origin.strip() for origin in settings.FRONTEND_ORIGIN.split(",")]
+    if "http://localhost:5173" not in origins:
+        origins.append("http://localhost:5173")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
@@ -112,3 +114,4 @@ def root_health_check():
 
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(shadow_router, prefix="/api/v1")
+

@@ -101,3 +101,27 @@ export const BrokerService = {
   getPositions: () => fetchWithAuth<AngelOnePositionsResponse>('/broker-monitoring/positions'),
   getOrders: () => fetchWithAuth<AngelOneOrdersResponse>('/broker-monitoring/orders')
 };
+
+export const MarketDataService = {
+  getOhlc: (symbol: string, interval: string = "FIFTEEN_MINUTE", days: number = 5) => 
+    fetchWithAuth<any>(`/market/ohlc/${symbol}?interval=${interval}&days=${days}`),
+  getTechnical: (symbol: string, interval: string = "ONE_DAY", days: number = 365) =>
+    fetchWithAuth<any>(`/market/technical/${symbol}?interval=${interval}&days=${days}`),
+  getFundamentals: (symbol: string) =>
+    fetchWithAuth<any>(`/market/fundamentals/${symbol}`),
+  getAnalysis: (symbol: string) =>
+    fetchWithAuth<any>(`/market/analysis/${symbol}`)
+};
+
+export const PortfolioIntelligenceService = {
+  getAnalysis: () => fetchWithAuth<any>('/portfolio/analysis'),
+  getHoldingsAnalysis: () => fetchWithAuth<any>('/portfolio/holdings-analysis'),
+  getBuyCandidates: () => fetchWithAuth<any>('/portfolio/buy-candidates'),
+  getSellReview: () => fetchWithAuth<any>('/portfolio/sell-review'),
+  getWatchlist: () => fetchWithAuth<any>('/portfolio/watchlist'),
+  getRiskSummary: () => fetchWithAuth<any>('/portfolio/risk')
+};
+
+export const AlertService = {
+  getAlerts: () => fetchWithAuth<any>('/alerts/')
+};

@@ -65,16 +65,15 @@ _global_angel_one_auth = None
 _global_angel_one_client = None
 _token_expiry = None
 
-def get_angel_one_data_service():
+def get_angel_one_client():
     """
-    Dependency factory: builds and returns a read-only AngelOneDataService.
+    Dependency factory: builds and returns a read-only AngelOneClient.
     Uses a singleton client with a threading lock to prevent authentication storms.
     """
     global _global_angel_one_auth, _global_angel_one_client, _token_expiry
     
     from app.services.brokers.angel_one.auth import AngelOneAuth
     from app.services.brokers.angel_one.client import AngelOneClient
-    from app.services.brokers.angel_one.data_service import AngelOneDataService
     from app.services.brokers.angel_one.exceptions import (
         AngelOneAuthenticationError,
         AngelOneNetworkError,
@@ -145,4 +144,12 @@ def get_angel_one_data_service():
                     detail="Unexpected error during broker authentication.",
                 )
 
-    return AngelOneDataService(_global_angel_one_client)
+    return _global_angel_one_client
+
+def get_angel_one_data_service():
+    """
+    Dependency factory: returns a read-only AngelOneDataService.
+    """
+    from app.services.brokers.angel_one.data_service import AngelOneDataService
+    client = get_angel_one_client()
+    return AngelOneDataService(client)

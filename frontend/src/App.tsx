@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import Dashboard from './components/Dashboard';
+import PortfolioIntelligence from './components/PortfolioIntelligence';
 import InvestmentDashboard from './pages/InvestmentDashboard';
 import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -15,7 +15,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             
             <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<PortfolioIntelligence />} />
               <Route path="/investment" element={<InvestmentDashboard />} />
             </Route>
             

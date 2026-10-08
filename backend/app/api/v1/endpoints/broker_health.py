@@ -104,17 +104,28 @@ def broker_auth_ping(current_user: User = Depends(get_current_user)):
 
     # Attempt real authentication — classify errors safely, never expose secrets
     try:
-        from app.services.brokers.angel_one.auth import AngelOneAuth
-        from app.services.brokers.angel_one.client import AngelOneClient
+        import app.api.deps as deps
+        from datetime import datetime, timedelta
+        
+        with deps._broker_lock:
+            if deps._global_angel_one_auth is None:
+                from app.services.brokers.angel_one.auth import AngelOneAuth
+                from app.services.brokers.angel_one.client import AngelOneClient
+                deps._global_angel_one_auth = AngelOneAuth(
+                    api_key=settings.ANGEL_ONE_API_KEY,
+                    client_id=settings.ANGEL_ONE_CLIENT_ID,
+                    password=settings.ANGEL_ONE_PASSWORD,
+                    totp_secret=settings.ANGEL_ONE_TOTP_SECRET,
+                )
+                deps._global_angel_one_client = AngelOneClient(deps._global_angel_one_auth)
 
-        auth = AngelOneAuth(
-            api_key=settings.ANGEL_ONE_API_KEY,
-            client_id=settings.ANGEL_ONE_CLIENT_ID,
-            password=settings.ANGEL_ONE_PASSWORD,
-            totp_secret=settings.ANGEL_ONE_TOTP_SECRET,
-        )
-        client = AngelOneClient(auth)
-        client.authenticate()  # loginByPassword via SmartAPI — read-only session
+            needs_auth = not deps._global_angel_one_auth.is_authenticated()
+            if not needs_auth and deps._token_expiry and datetime.utcnow() > deps._token_expiry:
+                needs_auth = True
+
+            if needs_auth:
+                deps._global_angel_one_client.authenticate()  # loginByPassword via SmartAPI
+                deps._token_expiry = datetime.utcnow() + timedelta(hours=1)
 
         # Confirm success only — never return the jwt/feed token
         return {

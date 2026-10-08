@@ -234,11 +234,8 @@ class TestHandleResponse:
 class TestGetNetworkErrors:
     def test_timeout_raises_network_error(self, client):
         """Connection timeout must raise AngelOneNetworkError, not propagate raw."""
-        with patch("httpx.Client") as mock_cls:
-            mock_ctx = MagicMock()
-            mock_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_cls.return_value.__exit__ = MagicMock(return_value=False)
-            mock_ctx.get.side_effect = httpx.ReadTimeout("timed out", request=MagicMock())
+        with patch.object(client.http_client, "get") as mock_get:
+            mock_get.side_effect = httpx.ReadTimeout("timed out", request=MagicMock())
 
             with pytest.raises(AngelOneNetworkError) as exc_info:
                 client._get("https://apiconnect.angelone.in/rest/secure/angelbroking/user/v1/getProfile")
@@ -247,11 +244,8 @@ class TestGetNetworkErrors:
 
     def test_connect_error_raises_network_error(self, client):
         """DNS / connection refused must raise AngelOneNetworkError."""
-        with patch("httpx.Client") as mock_cls:
-            mock_ctx = MagicMock()
-            mock_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_cls.return_value.__exit__ = MagicMock(return_value=False)
-            mock_ctx.get.side_effect = httpx.ConnectError("Name resolution failed", request=MagicMock())
+        with patch.object(client.http_client, "get") as mock_get:
+            mock_get.side_effect = httpx.ConnectError("Name resolution failed", request=MagicMock())
 
             with pytest.raises(AngelOneNetworkError) as exc_info:
                 client._get("https://apiconnect.angelone.in/rest/secure/angelbroking/user/v1/getProfile")
@@ -263,11 +257,8 @@ class TestGetNetworkErrors:
         Critical regression fix: broker HTTP 4xx must NOT be reclassified as
         AngelOneNetworkError. It must raise AngelOneInvalidResponseError.
         """
-        with patch("httpx.Client") as mock_cls:
-            mock_ctx = MagicMock()
-            mock_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_cls.return_value.__exit__ = MagicMock(return_value=False)
-            mock_ctx.get.return_value = _make_response(400, text="Bad Request")
+        with patch.object(client.http_client, "get") as mock_get:
+            mock_get.return_value = _make_response(400, text="Bad Request")
 
             with pytest.raises(AngelOneInvalidResponseError):
                 client._get("https://apiconnect.angelone.in/rest/secure/angelbroking/user/v1/getProfile")
@@ -277,22 +268,16 @@ class TestGetNetworkErrors:
         Critical regression fix: broker HTTP 5xx must NOT be reclassified as
         AngelOneNetworkError. It must raise AngelOneInvalidResponseError.
         """
-        with patch("httpx.Client") as mock_cls:
-            mock_ctx = MagicMock()
-            mock_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_cls.return_value.__exit__ = MagicMock(return_value=False)
-            mock_ctx.get.return_value = _make_response(503, text="<html>Service Unavailable</html>")
+        with patch.object(client.http_client, "get") as mock_get:
+            mock_get.return_value = _make_response(503, text="<html>Service Unavailable</html>")
 
             with pytest.raises(AngelOneInvalidResponseError):
                 client._get("https://apiconnect.angelone.in/rest/secure/angelbroking/user/v1/getProfile")
 
     def test_successful_get_response(self, client):
         """Happy-path: 200 OK with valid JSON data dict."""
-        with patch("httpx.Client") as mock_cls:
-            mock_ctx = MagicMock()
-            mock_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_cls.return_value.__exit__ = MagicMock(return_value=False)
-            mock_ctx.get.return_value = _make_response(
+        with patch.object(client.http_client, "get") as mock_get:
+            mock_get.return_value = _make_response(
                 200,
                 json_body={"status": True, "data": {"availablecash": "50000.00"}},
             )
@@ -340,11 +325,8 @@ class TestSecretRedaction:
 
     def test_jwt_token_never_logged_in_get(self, client, caplog):
         """JWT token must never appear in log output during GET requests."""
-        with patch("httpx.Client") as mock_cls:
-            mock_ctx = MagicMock()
-            mock_cls.return_value.__enter__ = MagicMock(return_value=mock_ctx)
-            mock_cls.return_value.__exit__ = MagicMock(return_value=False)
-            mock_ctx.get.return_value = _make_response(
+        with patch.object(client.http_client, "get") as mock_get:
+            mock_get.return_value = _make_response(
                 200,
                 json_body={"status": True, "data": {}},
             )

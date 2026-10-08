@@ -48,3 +48,40 @@ def get_order_history(
     _verify_portfolio_ownership(db, current_user.id, portfolio_id)
     orders = db.query(BrokerOrderRecord).filter(BrokerOrderRecord.portfolio_id == int(portfolio_id)).order_by(BrokerOrderRecord.created_at.desc()).all()
     return [{"id": o.id, "status": o.status, "client_order_id": o.client_order_id} for o in orders]
+
+from pydantic import BaseModel
+from typing import List
+
+class OrderPreviewRequest(BaseModel):
+    symbol: str
+    side: str
+    quantity: int
+    estimated_price: float
+    decision: str
+    thesis_status: str
+    risk_score: float
+    current_allocation_pct: float
+    resulting_allocation_pct: float
+    reasons: List[str]
+    warnings: List[str]
+
+@router.post("/preview")
+def preview_order(request: OrderPreviewRequest):
+    return {
+        "status": "PREVIEW_READY",
+        "symbol": request.symbol,
+        "side": request.side,
+        "quantity": request.quantity,
+        "estimated_price": request.estimated_price,
+        "estimated_amount": request.quantity * request.estimated_price,
+        "order_type": "MARKET",
+        "exchange": "NSE",
+        "product_type": "DELIVERY",
+        "reason": " | ".join(request.reasons),
+        "thesis_status": request.thesis_status,
+        "risk": request.risk_score,
+        "current_portfolio_allocation": request.current_allocation_pct,
+        "resulting_allocation": request.resulting_allocation_pct,
+        "warnings": request.warnings,
+        "notice": "This is a PREVIEW. Explicit human confirmation is required for execution."
+    }

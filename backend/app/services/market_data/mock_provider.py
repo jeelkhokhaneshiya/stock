@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import List, Any
+from typing import List, Any, Optional
 from app.services.interfaces import MarketDataProvider
 from app.schemas.market_data import MarketQuote, HistoricalBar, CompanyInfo, FundamentalData, ETFInfo, MutualFundInfo
 
@@ -29,13 +29,17 @@ class MockMarketDataProvider(MarketDataProvider):
         if symbol.startswith("INVALID"):
             raise ValueError(f"Invalid symbol: {symbol}")
             
-        base_price = sum(ord(c) for c in symbol) * 1.5
+        seed = sum(ord(c) for c in symbol)
+        base_price = seed * 1.5
         bars = []
         
         current = start_date
+        trend_increment = 0.0
         while current <= end_date:
-            daily_factor = 1.0 + ((current.day % 10) - 5) / 100.0  # -5% to +4%
-            price = base_price * daily_factor
+            trend_increment += (seed % 5) * 0.1  # Unique trend per symbol
+            # Incorporate seed into daily volatility
+            daily_factor = 1.0 + (((current.day + seed) % 15) - 7) / 100.0  # -7% to +7%
+            price = base_price * daily_factor + trend_increment
             
             bars.append(HistoricalBar(
                 symbol=symbol,
@@ -67,21 +71,33 @@ class MockMarketDataProvider(MarketDataProvider):
             timestamp=datetime.now(timezone.utc)
         )
 
-    def get_fundamentals(self, symbol: str, exchange: str) -> FundamentalData:
+    def get_fundamentals(self, symbol: str, exchange: str, isin: Optional[str] = None) -> FundamentalData:
+        # Generate deterministic but unique values based on symbol string
+        seed = sum(ord(c) for c in symbol)
+        
+        # Introduce simulated missing data for certain symbols to test UNAVAILABLE states
+        if seed % 5 == 0:
+            return None # Simulate missing fundamentals for 20% of symbols
+            
+        rev_growth = 0.05 + ((seed % 20) / 100.0) # 0.05 to 0.24
+        profit_growth = rev_growth + 0.02
+        roe = 0.08 + ((seed % 15) / 100.0)
+        debt = 0.1 + ((seed % 30) / 10.0)
+        
         return FundamentalData(
             symbol=symbol,
             exchange=exchange,
-            revenue=500000000.0,
-            revenue_growth=0.15,
-            net_income=100000000.0,
-            profit_growth=0.20,
-            eps=15.5,
-            roe=0.18,
-            roce=0.22,
-            debt_to_equity=0.5,
-            operating_margin=0.25,
-            net_margin=0.20,
-            free_cash_flow=120000000.0,
+            revenue=500000000.0 + (seed * 1000000),
+            revenue_growth=rev_growth,
+            net_income=100000000.0 + (seed * 500000),
+            profit_growth=profit_growth,
+            eps=10.0 + (seed % 50),
+            roe=roe,
+            roce=roe + 0.02,
+            debt_to_equity=debt,
+            operating_margin=0.15 + ((seed % 10) / 100.0),
+            net_margin=0.10 + ((seed % 10) / 100.0),
+            free_cash_flow=10000000.0 * (seed % 20),
             data_source="mock",
             timestamp=datetime.now(timezone.utc)
         )
