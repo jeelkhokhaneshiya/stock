@@ -297,6 +297,15 @@ class AngelOneClient:
         url = f"{self.BASE_URL}/rest/secure/angelbroking/historical/v1/getCandleData"
         return self._post(url, payload)
 
+    def get_ltp_data(self, exchange: str, tradingsymbol: str, symboltoken: str) -> Dict[str, Any]:
+        url = f"{self.BASE_URL}/rest/secure/angelbroking/order/v1/getLtpData"
+        payload = {
+            "exchange": exchange,
+            "tradingsymbol": tradingsymbol,
+            "symboltoken": symboltoken
+        }
+        return self._post(url, payload)
+
     # -----------------------------------------------------------------------
     # Internal HTTP helpers — single-retry on genuine session expiry
     # -----------------------------------------------------------------------

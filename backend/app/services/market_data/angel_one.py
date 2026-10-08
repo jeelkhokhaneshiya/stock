@@ -32,9 +32,22 @@ class AngelOneMarketDataProvider(MarketDataProvider):
                     symbol = item.get("symbol")
                     exch = item.get("exch_seg")
                     token = item.get("token")
+                    inst_type = item.get("instrumenttype", "")
+                    
                     if symbol and exch and token:
-                        key = f"{exch}:{symbol}"
-                        self._master_mapping[key] = token
+                        # For NSE, strictly map only standard equities (-EQ) to avoid derivatives/ambiguity
+                        if exch == "NSE":
+                            if symbol.endswith("-EQ") and inst_type == "":
+                                std_symbol = symbol[:-3]  # Remove exactly "-EQ" at the end
+                                key = f"{exch}:{std_symbol}"
+                                self._master_mapping[key] = token
+                        else:
+                            # For BSE or others, just use the symbol
+                            key = f"{exch}:{symbol}"
+                            # Prevent overwriting if already exists (prefer first match if ambiguous)
+                            if key not in self._master_mapping:
+                                self._master_mapping[key] = token
+                                
                 logger.info(f"Loaded {len(self._master_mapping)} token mappings from Angel One.")
 
     def _get_token(self, symbol: str, exchange: str) -> str:
@@ -42,7 +55,62 @@ class AngelOneMarketDataProvider(MarketDataProvider):
         return self._master_mapping.get(key, "")
 
     def get_quote(self, symbol: str, exchange: str) -> Any:
-        raise NotImplementedError("Live quote via Angel One not fully implemented.")
+        if symbol.isdigit():
+            token = symbol
+        else:
+            token = self._get_token(symbol, exchange)
+            
+        if not token:
+            logger.warning(f"Skipping Angel One quote for {symbol} - could not resolve token")
+            return None
+            
+        tradingsymbol = symbol + "-EQ" if exchange == "NSE" else symbol
+        
+        try:
+            data = self.client.get_ltp_data(exchange, tradingsymbol, token)
+        except Exception as e:
+            logger.error(f"Failed to fetch quote for {symbol}: {e}")
+            return None
+            
+        if not data:
+            return None
+            
+        try:
+            ltp = float(data.get("ltp", 0))
+        except (ValueError, TypeError):
+            ltp = 0.0
+            
+        if ltp <= 0:
+            return None
+            
+        try:
+            o = float(data.get("open", 0))
+            h = float(data.get("high", 0))
+            l = float(data.get("low", 0))
+            c = float(data.get("close", 0))
+        except (ValueError, TypeError):
+            o = h = l = c = 0.0
+            
+        if h > 0 and l > 0 and h < l:
+            logger.warning(f"Invalid High/Low in Angel One quote for {symbol}")
+            return None
+            
+        from app.schemas.market_data import MarketQuote
+        
+        return MarketQuote(
+            symbol=symbol,
+            exchange=exchange,
+            price=ltp,
+            open=o if o > 0 else None,
+            high=h if h > 0 else None,
+            low=l if l > 0 else None,
+            previous_close=c if c > 0 else None,
+            volume=None,
+            currency="INR",
+            data_source="ANGEL_ONE",
+            timestamp=datetime.now(timezone.utc),
+            is_stale=False
+        )
 
     def get_historical_data(self, symbol: str, exchange: str, timeframe: str, start_date: datetime, end_date: datetime) -> List[HistoricalBar]:
         """

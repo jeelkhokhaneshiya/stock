@@ -22,7 +22,12 @@ async def main():
         
     print("1. Angel One Authentication...")
     try:
-        auth = AngelOneAuth(client_id, password, api_key, totp_secret)
+        auth = AngelOneAuth(
+            api_key=api_key,
+            client_id=client_id,
+            password=password,
+            totp_secret=totp_secret,
+        )
         client = AngelOneClient(auth=auth)
         client.authenticate()
         print("   PASS")
@@ -40,7 +45,7 @@ async def main():
         
     print("\n3. Real Holdings Test...")
     try:
-        holdings = client.get_holding()
+        holdings = client.get_holdings()
         count = len(holdings) if isinstance(holdings, list) else 0
         print(f"   PASS: Retrieved {count} holdings")
     except Exception as e:
@@ -49,11 +54,11 @@ async def main():
     print("\n4. Real Market-Data Test...")
     try:
         md = AngelOneMarketDataProvider(client)
-        info = md.get_company_info("TCS", "NSE")
-        if info:
-            print(f"   PASS: Retrieved info for {info.company_name} (LTP: {info.current_price})")
+        quote = md.get_quote("TCS", "NSE")
+        if quote and quote.price > 0 and quote.symbol == "TCS" and quote.exchange == "NSE" and quote.data_source == "ANGEL_ONE":
+            print(f"   PASS: Retrieved real quote for TCS (LTP: INR {quote.price})")
         else:
-            print("   FAIL: Could not retrieve market data for TCS")
+            print("   FAIL: Could not retrieve market quote for TCS or data invalid")
     except Exception as e:
         print(f"   FAIL: {e}")
         

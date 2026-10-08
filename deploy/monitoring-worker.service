@@ -1,0 +1,31 @@
+[Unit]
+Description=Antigravity Stock 24/7 Monitoring & Notification Service
+After=network.target
+
+[Service]
+Type=simple
+User=stockbot
+Group=stockbot
+WorkingDirectory=/opt/stock/backend
+EnvironmentFile=/opt/stock/backend/.env
+
+# Use the virtual environment's python
+ExecStart=/opt/stock/backend/venv/bin/python -m app.worker.monitoring_worker
+
+# Restart policy
+Restart=always
+RestartSec=30
+
+# Hardening
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=stock-monitoring
+
+[Install]
+WantedBy=multi-user.target

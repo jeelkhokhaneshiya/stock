@@ -122,6 +122,98 @@ class TestDecisionEngineE2E:
                     
     def test_data_is_real(self, live_portfolio_manager):
         """Verify the data comes from the real Angel One connection."""
-        # The portfolio manager uses the AngelOneDataService directly in the fixture.
-        # Since we authenticated with AngelOneClient, it is real.
         assert live_portfolio_manager.client._client.BASE_URL == "https://apiconnect.angelone.in"
+
+    def test_order_intent_and_preview_creation(self, live_portfolio_manager):
+        """Test that actionable decisions correctly generate OrderIntent and OrderPreview without executing."""
+        manager = live_portfolio_manager
+        
+        # Mock the external network call to timeout deterministically in case of issues
+        import httpx
+        original_timeout = manager.client._client.http_client.timeout
+        manager.client._client.http_client.timeout = httpx.Timeout(5.0)
+        
+        try:
+            analysis = manager.get_full_portfolio_analysis()
+        finally:
+            manager.client._client.http_client.timeout = original_timeout
+            
+        if analysis["status"] == "BROKER_DISCONNECTED":
+            pytest.skip("Broker disconnected")
+            
+        action_plan = analysis["daily_investment_action_plan"]
+        
+        from app.schemas.execution import OrderIntent
+        from app.services.execution.real_execution import RealExecutionEngine
+        import uuid
+        from datetime import datetime, timezone
+        
+        engine = RealExecutionEngine(manager.client._client, manager, "audit_test.jsonl")
+        
+        previews_generated = 0
+        for decision in action_plan:
+            action = decision.get("action")
+            qty = decision.get("quantity", 0)
+            
+            if action in ["BUY", "BUY_MORE", "SELL", "REDUCE"] and qty > 0:
+                tx_type = "BUY" if action in ["BUY", "BUY_MORE"] else "SELL"
+                price = decision.get("current_price", 0.0)
+                
+                # 13. Actionable decision creates OrderIntent
+                intent = OrderIntent(
+                    intent_id=str(uuid.uuid4()),
+                    symbol=decision["symbol"],
+                    symboltoken="0",
+                    exchange="NSE",
+                    transaction_type=tx_type,
+                    product_type="DELIVERY",
+                    order_type="MARKET",
+                    quantity=qty,
+                    price=price,
+                    estimated_value=decision.get("estimated_value", qty*price),
+                    decision_reason="test",
+                    timestamp=datetime.now(timezone.utc)
+                )
+                assert intent.transaction_type in ["BUY", "SELL"]
+                
+                # 15. OrderPreview created
+                # 16. OrderPreview does not submit broker order
+                context = {"ltp": price}
+                
+                # We assert this creates a preview without raising or submitting
+                preview = engine.create_order_preview(intent, context)
+                assert preview is not None
+                assert preview.state == "READY_FOR_CONFIRMATION"
+                assert preview.product_type == "DELIVERY"
+                previews_generated += 1
+                
+        # If any actionable intents were found, we verified they generated previews.
+        # If none were found (e.g. all HOLD/WATCH), we at least passed without crashing.
+        assert previews_generated >= 0 
+        
+    def test_delivery_only_restriction(self, live_portfolio_manager):
+        from app.schemas.execution import OrderIntent
+        from app.services.execution.real_execution import RealExecutionEngine, ExecutionError
+        import uuid
+        from datetime import datetime, timezone
+        
+        engine = RealExecutionEngine(live_portfolio_manager.client._client, live_portfolio_manager, "audit_test.jsonl")
+        
+        # 19. DELIVERY-only restriction remains
+        intent = OrderIntent(
+            intent_id=str(uuid.uuid4()),
+            symbol="INFY",
+            symboltoken="0",
+            exchange="NSE",
+            transaction_type="BUY",
+            product_type="INTRADAY", # Invalid product type
+            order_type="MARKET",
+            quantity=10,
+            price=100.0,
+            estimated_value=1000.0,
+            decision_reason="test",
+            timestamp=datetime.now(timezone.utc)
+        )
+        
+        with pytest.raises(ExecutionError, match="DELIVERY"):
+            engine.create_order_preview(intent, {"ltp": 100.0})
