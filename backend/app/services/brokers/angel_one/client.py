@@ -171,28 +171,28 @@ class AngelOneClient:
     # Authentication — single session management
     # -----------------------------------------------------------------------
 
-    def authenticate(self) -> bool:
+    def authenticate(self, force: bool = False) -> bool:
         """
         Authenticate using SmartAPI loginByPassword.
 
         Session contract
         ----------------
-        - If already authenticated (jwt_token present), return True immediately.
+        - If already authenticated (jwt_token present) and not force, return True immediately.
         - If a re-auth was attempted within AUTH_COOLDOWN_SECONDS, raise
           AngelOneAuthenticationError rather than attempting again (auth storm
-          prevention).  Angel One invalidates previous sessions on each login,
+          prevention) unless force=True. Angel One invalidates previous sessions on each login,
           so rapid re-auth cascades cause every existing caller to get 403.
         - Only one thread at a time may attempt authentication (threading.Lock).
         - Credentials/tokens are NEVER logged.
         """
         with self._auth_lock:
-            # Already authenticated — reuse the session.
-            if self.auth.is_authenticated():
+            # Already authenticated — reuse the session unless forced.
+            if not force and self.auth.is_authenticated():
                 return True
 
             # Auth storm guard: enforce minimum cooldown between login attempts.
             now = time.monotonic()
-            if self._last_auth_attempt_ts is not None:
+            if not force and self._last_auth_attempt_ts is not None:
                 elapsed = now - self._last_auth_attempt_ts
                 if elapsed < self.AUTH_COOLDOWN_SECONDS:
                     remaining = self.AUTH_COOLDOWN_SECONDS - elapsed
@@ -208,6 +208,7 @@ class AngelOneClient:
 
             self._last_auth_attempt_ts = now
             self._auth_attempt_count += 1
+
 
             url = f"{self.BASE_URL}/rest/auth/angelbroking/user/v1/loginByPassword"
             path = _safe_path(url)
@@ -351,13 +352,14 @@ class AngelOneClient:
                 if attempt == 0:
                     # Genuine session expiry detected — attempt one re-auth then retry
                     logger.info(
-                        "Session expired on %s %s; attempting single re-authentication.",
+                        "Session expired on %s %s; attempting single safe re-authentication.",
                         method, path,
                     )
-                    self.authenticate()   # raises if cooldown blocks or credentials fail
+                    self.authenticate(force=True)   # re-auth once safely, bypassing cooldown
                     # Let the loop retry
                 else:
                     raise
+
 
     def _do_http(
         self,

@@ -11,8 +11,9 @@ class NotificationService:
 
 class TelegramNotificationService(NotificationService):
     def __init__(self, bot_token: Optional[str] = None, chat_id: Optional[str] = None):
-        self.bot_token = bot_token or getattr(settings, "TELEGRAM_BOT_TOKEN", None)
-        self.chat_id = chat_id or getattr(settings, "TELEGRAM_CHAT_ID", None)
+        self.bot_token = bot_token if bot_token is not None else getattr(settings, "TELEGRAM_BOT_TOKEN", None)
+        self.chat_id = chat_id if chat_id is not None else getattr(settings, "TELEGRAM_CHAT_ID", None)
+
         
     def send_notification(self, message: str) -> bool:
         if not self.bot_token or not self.chat_id:
@@ -45,7 +46,16 @@ class MockNotificationService(NotificationService):
         logger.info(f"Mock notification sent: {message}")
         return True
 
+class FailedNotificationService(NotificationService):
+    """Notification service used when Telegram is not configured in production."""
+    def send_notification(self, message: str) -> bool:
+        logger.error("Notification delivery failed: Telegram credentials are not configured in production.")
+        return False
+
 def get_notification_service() -> NotificationService:
-    if getattr(settings, "TESTING", False) or not getattr(settings, "TELEGRAM_BOT_TOKEN", None):
+    if getattr(settings, "TESTING", False):
         return MockNotificationService()
+    if not getattr(settings, "TELEGRAM_BOT_TOKEN", None) or not getattr(settings, "TELEGRAM_CHAT_ID", None):
+        return FailedNotificationService()
     return TelegramNotificationService()
+

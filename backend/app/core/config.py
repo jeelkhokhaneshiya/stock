@@ -4,6 +4,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "AI Investment System"
     APP_ENV: str = "development"
     DEBUG: bool = True
+    TESTING: bool = False
     FRONTEND_ORIGIN: str = "http://localhost:5173"
     
     # Database
@@ -56,11 +57,15 @@ class Settings(BaseSettings):
     FINNHUB_API_KEY: str | None = None
     TWELVE_DATA_API_KEY: str | None = None
     
+    # Telegram Configuration
+    TELEGRAM_BOT_TOKEN: str | None = None
+    TELEGRAM_CHAT_ID: str | None = None
+
     # Authentication
     SECRET_KEY: str = "supersecretkey"  # Should be overridden in .env
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()
